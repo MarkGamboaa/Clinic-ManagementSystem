@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 import database as db
+from database import get_doctor_name
 
 db.connect_db()
 
@@ -16,6 +17,8 @@ class ClinicManagementSystem:
 
         tk.Button(self.frame, text="Patient", command=self.Patient).grid(row=0, column=0, padx=5, pady=5)
         tk.Button(self.frame, text="Doctor", command=self.Doctor).grid(row=0, column=1, padx=5, pady=5)
+
+        self.appointments = []  # List to store appointment details
 
     def clear_frame(self):
         """Clear all widgets from the frame."""
@@ -120,7 +123,8 @@ class ClinicManagementSystem:
 
         tk.Button(self.frame, text="Book Appointment", font=("Arial", 12, "bold"),
                   command=self.BookAppointment).pack(pady=5)
-        tk.Button(self.frame, text="View Appointment", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="View Appointment", font=("Arial", 12, "bold"),
+                  command=self.ViewAppointment).pack(pady=5)
         tk.Button(self.frame, text="Cancel Appointment", font=("Arial", 12, "bold")).pack(pady=5)
         tk.Button(self.frame, text="View Medical Records", font=("Arial", 12, "bold")).pack(pady=5)
         tk.Button(self.frame, text="Back", command=self.Patient).pack(pady=10)
@@ -135,7 +139,12 @@ class ClinicManagementSystem:
         patient_name_entry.pack(pady=5)
 
         tk.Label(self.frame, text="Doctor:", font=("Arial", 12, "bold")).pack(anchor="w", padx=50)
-        doctor_label = tk.Label(self.frame, text="Dr. John Doe", font=("Arial", 12), bg="lightgray", width=28, anchor="w")
+        try:
+            doctor_name = get_doctor_name()  # Fetch doctor name from the database
+        except ValueError as e:
+            doctor_name = "Unavailable"
+            messagebox.showerror("Error", str(e))
+        doctor_label = tk.Label(self.frame, text=doctor_name, font=("Arial", 12), bg="lightgray", width=28, anchor="w")
         doctor_label.pack(pady=5)
 
         tk.Label(self.frame, text="Date:", font=("Arial", 12, "bold")).pack(anchor="w", padx=50)
@@ -151,11 +160,41 @@ class ClinicManagementSystem:
 
     def submit_appointment(self, patient_name, date, time):
         if patient_name and date and time:
-            messagebox.showinfo("Success", f"Appointment booked for {patient_name} on {date} at {time} with Dr. John Doe.")
+            try:
+                # Fetch the doctor's name dynamically
+                doctor_name = get_doctor_name()
+                if not doctor_name:
+                    raise ValueError("No doctor available.")
+
+                # Store the appointment
+                appointment = {
+                    "patient_name": patient_name,
+                    "doctor_name": doctor_name,  # Use the fetched doctor name
+                    "date": date,
+                    "time": time
+                }
+                self.appointments.append(appointment)
+                messagebox.showinfo("Success", f"Appointment booked for {patient_name} on {date} at {time} with {doctor_name}.")
+                self.load_patient_dashboard(patient_name)
+            except ValueError as e:
+                messagebox.showerror("Error", str(e))
+            except Exception as e:
+                messagebox.showerror("Error", f"An error occurred: {e}")
         else:
             messagebox.showwarning("Input Error", "Please fill in all fields.")
 
+    def ViewAppointment(self):
+        self.clear_frame()
+        tk.Label(self.frame, text="Your Appointments", font=("Arial", 20, "bold")).pack(pady=10)
 
+        if not self.appointments:
+            tk.Label(self.frame, text="No appointments found.", font=("Arial", 12)).pack(pady=5)
+        else:
+            for idx, appointment in enumerate(self.appointments, start=1):
+                appointment_text = f"{idx}. {appointment['patient_name']} - {appointment['doctor_name']} on {appointment['date']} at {appointment['time']}"
+                tk.Label(self.frame, text=appointment_text, font=("Arial", 12), anchor="w").pack(pady=2)
+
+        tk.Button(self.frame, text="Back", font=("Arial", 12, "bold"), command=lambda: self.load_patient_dashboard("User")).pack(pady=10)
 
     def load_doctor_dashboard(self, username):
         self.clear_frame()

@@ -96,10 +96,54 @@ def book_appointment(patient_name, doctor, date, time):
     try:
         conn = sqlite3.connect('Systemdb.db')
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO appointments (patient_name, doctor, date, time) VALUES (?, ?, ?, ?)", 
-                       (patient_name, doctor, date, time))
+        cursor.execute(
+            "INSERT INTO appointments (patient_name, doctor, date, time) VALUES (?, ?, ?, ?)", 
+            (patient_name, doctor, date, time)
+        )
+        conn.commit()
+        appointment_id = cursor.lastrowid  # Get the ID of the inserted appointment
+        conn.close()
+        return appointment_id
+    except sqlite3.Error as e:
+        raise ValueError(f"Failed to book appointment: {e}")
+
+def get_doctor_name():
+    """Fetch the doctor's name from the database."""
+    try:
+        conn = sqlite3.connect('Systemdb.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM doctors WHERE id = 1")
+        doctor_name = cursor.fetchone()[0]
+        conn.close()
+        return doctor_name
+    except Exception as e:
+        raise ValueError(f"Error fetching doctor name: {e}")
+
+def insert_appointment(patient_name, doctor_name, date, time):
+    """Insert a new appointment into the database."""
+    try:
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO appointments (patient_name, doctor_name, date, time) VALUES (?, ?, ?, ?)",
+            (patient_name, doctor_name, date, time)
+        )
         conn.commit()
         conn.close()
-        return True
-    except sqlite3.Error:
-        return False
+    except Exception as e:
+        raise ValueError(f"Failed to insert appointment: {e}")
+
+def get_appointments_by_patient(patient_name):
+    """Retrieve all appointments for a specific patient."""
+    try:
+        conn = connect_db()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT doctor_name, date, time FROM appointments WHERE patient_name = ?",
+            (patient_name,)
+        )
+        appointments = cursor.fetchall()
+        conn.close()
+        return appointments
+    except Exception as e:
+        raise ValueError(f"Failed to retrieve appointments: {e}")
