@@ -1,8 +1,7 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox, simpledialog, ttk
 import database as db
 
-window = tk.Tk()
 db.connect_db()
 
 class ClinicManagementSystem:
@@ -19,6 +18,7 @@ class ClinicManagementSystem:
         tk.Button(self.frame, text="Doctor", command=self.Doctor).grid(row=0, column=1, padx=5, pady=5)
 
     def clear_frame(self):
+        """Clear all widgets from the frame."""
         for widget in self.frame.winfo_children():
             widget.destroy()
 
@@ -64,12 +64,7 @@ class ClinicManagementSystem:
         password_entry = tk.Entry(self.frame, show="*")
         password_entry.grid(row=1, column=1, padx=5, pady=5)
 
-        tk.Button(
-            self.frame,
-            text="Register",
-            command=lambda: self.Register(username_entry.get(), password_entry.get())
-        ).grid(row=2, column=0, padx=5, pady=5)
-
+        tk.Button(self.frame, text="Register", command=lambda: self.Register(username_entry.get(), password_entry.get())).grid(row=2, column=0, padx=5, pady=5)
         tk.Button(self.frame, text="Back", command=self.Patient).grid(row=2, column=1, padx=5, pady=5)
 
     def Register(self, username, password):
@@ -86,15 +81,91 @@ class ClinicManagementSystem:
 
     def Login(self, username, password):
         if username and password:
+            print(f"Attempting login for: {username}")  # Debugging output
             if db.validate_user(username, password):
-                messagebox.showinfo("Login Info", f"Welcome {username}!")
+                print("Login successful")  # Debugging output
+                self.load_patient_dashboard(username)
             else:
+                print("Login failed")  # Debugging output
                 messagebox.showerror("Login Failed", "Invalid username or password.")
         else:
             messagebox.showwarning("Input Error", "Please enter both username and password.")
 
     def DoctorLogIn(self):
-        print("Doctor Login functionality goes here.")
+        self.clear_frame()
 
-self = ClinicManagementSystem(window)
+        tk.Label(self.frame, text="Username").grid(row=0, column=0, padx=5, pady=5)
+        username_entry = tk.Entry(self.frame)
+        username_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(self.frame, text="Password").grid(row=1, column=0, padx=5, pady=5)
+        password_entry = tk.Entry(self.frame, show="*")
+        password_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        tk.Button(self.frame, text="Login", command=lambda: self.DoctorLogin(username_entry.get(), password_entry.get())).grid(row=2, column=0, padx=5, pady=5)
+        tk.Button(self.frame, text="Back", command=self.Doctor).grid(row=2, column=1, padx=5, pady=5)
+
+    def DoctorLogin(self, username, password):
+        if username and password:
+            if db.validate_doctor(username, password):  # Ensure this function exists in your database module
+                self.load_doctor_dashboard(username)
+            else:
+                messagebox.showerror("Login Failed", "Invalid username or password.")
+        else:
+            messagebox.showwarning("Input Error", "Please enter both username and password.")
+
+    def load_patient_dashboard(self, username):
+        self.clear_frame()
+        tk.Label(self.frame, text=f"Welcome, {username}", font=("Arial", 20, "bold")).pack(pady=10)
+
+        tk.Button(self.frame, text="Book Appointment", font=("Arial", 12, "bold"),
+                  command=self.BookAppointment).pack(pady=5)
+        tk.Button(self.frame, text="View Appointment", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="Cancel Appointment", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="View Medical Records", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="Back", command=self.Patient).pack(pady=10)
+
+    def BookAppointment(self):
+        self.clear_frame()
+        
+        tk.Label(self.frame, text="Book Appointment", font=("Arial", 20, "bold")).pack(pady=10)
+
+        tk.Label(self.frame, text="Patient Name:", font=("Arial", 12, "bold")).pack(anchor="w", padx=50)
+        patient_name_entry = tk.Entry(self.frame, font=("Arial", 12), width=30)
+        patient_name_entry.pack(pady=5)
+
+        tk.Label(self.frame, text="Doctor:", font=("Arial", 12, "bold")).pack(anchor="w", padx=50)
+        doctor_label = tk.Label(self.frame, text="Dr. John Doe", font=("Arial", 12), bg="lightgray", width=28, anchor="w")
+        doctor_label.pack(pady=5)
+
+        tk.Label(self.frame, text="Date:", font=("Arial", 12, "bold")).pack(anchor="w", padx=50)
+        date_entry = tk.Entry(self.frame, font=("Arial", 12), width=30)
+        date_entry.pack(pady=5)
+
+        tk.Label(self.frame, text="Time:", font=("Arial", 12, "bold")).pack(anchor="w", padx=50)
+        time_entry = tk.Entry(self.frame, font=("Arial", 12), width=30)
+        time_entry.pack(pady=5)
+
+        tk.Button(self.frame, text="Submit", font=("Arial", 12, "bold"), command=lambda: self.submit_appointment(patient_name_entry.get(), date_entry.get(), time_entry.get())).pack(pady=10)
+        tk.Button(self.frame, text="Back", font=("Arial", 12, "bold"), command=lambda: self.load_patient_dashboard("User")).pack(pady=5)
+
+    def submit_appointment(self, patient_name, date, time):
+        if patient_name and date and time:
+            messagebox.showinfo("Success", f"Appointment booked for {patient_name} on {date} at {time} with Dr. John Doe.")
+        else:
+            messagebox.showwarning("Input Error", "Please fill in all fields.")
+
+
+
+    def load_doctor_dashboard(self, username):
+        self.clear_frame()
+        tk.Label(self.frame, text=f"Welcome, Dr. {username}", font=("Arial", 20, "bold")).pack(pady=10)
+
+        tk.Button(self.frame, text="View Appointments", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="Manage Patients", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="Medical Records", font=("Arial", 12, "bold")).pack(pady=5)
+        tk.Button(self.frame, text="Back", command=self.Doctor).pack(pady=10)
+
+window = tk.Tk()
+ClinicManagementSystem(window)
 window.mainloop()
